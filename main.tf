@@ -30,7 +30,16 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
   acl        = "public-read"
 }
 
-# resource "aws_s3_" "" {}
+resource "aws_s3_bucket_website_configuration" "bucket_static_website" {
+  depends_on = [aws_s3_bucket.emi_bucket]
+  bucket     = aws_s3_bucket.emi_bucket.id
+  index_document {
+    suffix = "index.html"
+  }
+  error_document {
+    key = "index.html"
+  }
+}
 
 # resource "aws_iam_role" "codebuild_role" {
 #   assume_role_policy = ""
@@ -64,12 +73,12 @@ EOH
     type                = "S3"
     encryption_disabled = true
     path                = "/"
-    location = aws_s3_bucket.emi_bucket.bucket
+    location            = aws_s3_bucket.emi_bucket.bucket
   }
   environment {
-    compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "docker.io/node:16.10.0-buster"
-    type         = "LINUX_CONTAINER"
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "docker.io/node:16.10.0-buster"
+    type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "SERVICE_ROLE"
     registry_credential {
       credential          = var.docker_cred_secret_manager_arn
@@ -77,6 +86,7 @@ EOH
     }
   }
 }
+
 
 # resource "aws_s3_bucket_policy" "bucket_policy" {
 #   bucket = aws_s3_bucket.emi_bucket.id
