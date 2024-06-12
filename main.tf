@@ -1,3 +1,6 @@
+variable "docker_cred_secret_manager_arn" {}
+variable "codebuild_service_role" {}
+
 # Step 1 - Clone the git repo to this local computer
 resource "null_resource" "emi_git_clone" {
   provisioner "local-exec" {
@@ -48,10 +51,12 @@ resource "aws_s3_bucket_object" "copy_emi_angular" {
 
 resource "aws_codebuild_project" "emi_cd_builder" {
   name          = "emi-cd-builder"
-  service_role  = var.cloudbuild_service_role
+  service_role  = var.codebuild_service_role
   build_timeout = 5
+
   source {
     type      = "S3"
+    location  = "emi-calculator-tf"
     buildspec = <<EOH
 version: 0.2
 
