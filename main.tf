@@ -1,13 +1,7 @@
 variable "docker_cred_secret_manager_arn" {}
 variable "codebuild_service_role" {}
 
-# Step 1 - Clone the git repo to this local computer
-resource "null_resource" "emi_git_clone" {
-  provisioner "local-exec" {
-    command = "git clone https://github.com/satyam7world/emi-calculator-angular.git"
-  }
-}
-
+# Step 1 - Create S3 Bucket for Static Website Hosting
 resource "aws_s3_bucket" "emi_bucket" {
   bucket = "emi-calculator-tf"
   tags = {
@@ -36,13 +30,7 @@ resource "aws_s3_bucket_acl" "bucket_acl" {
   acl        = "public-read"
 }
 
-resource "aws_s3_bucket_object" "copy_emi_angular" {
-  bucket   = aws_s3_bucket.emi_bucket.id
-  for_each = fileset("./emi-calculator-angular/", "**/*")
-  key      = each.value
-  source   = "./emi-calculator-angular/${each.value}"
-  etag     = filemd5("./emi-calculator-angular/${each.value}")
-}
+# resource "aws_s3_" "" {}
 
 # resource "aws_iam_role" "codebuild_role" {
 #   assume_role_policy = ""
@@ -54,9 +42,10 @@ resource "aws_codebuild_project" "emi_cd_builder" {
   service_role  = var.codebuild_service_role
   build_timeout = 5
 
+
   source {
-    type      = "S3"
-    location  = "emi-calculator-tf"
+    type      = "GITHUB"
+    location  = "https://github.com/satyam7world/emi-calculator-angular.git"
     buildspec = <<EOH
 version: 0.2
 
@@ -75,11 +64,13 @@ EOH
     type                = "S3"
     encryption_disabled = true
     path                = "/"
+    location = aws_s3_bucket.emi_bucket.bucket
   }
   environment {
     compute_type = "BUILD_GENERAL1_SMALL"
     image        = "docker.io/node:16.10.0-buster"
     type         = "LINUX_CONTAINER"
+    image_pull_credentials_type = "SERVICE_ROLE"
     registry_credential {
       credential          = var.docker_cred_secret_manager_arn
       credential_provider = "SECRETS_MANAGER"
