@@ -37,11 +37,50 @@ resource "aws_s3_bucket_object" "copy_emi_angular" {
   bucket   = aws_s3_bucket.emi_bucket.id
   for_each = fileset("./emi-calculator-angular/", "**/*")
   key      = each.value
-  source = "./emi-calculator-angular/${each.value}"
-  etag =  filemd5("./emi-calculator-angular/${each.value}")
+  source   = "./emi-calculator-angular/${each.value}"
+  etag     = filemd5("./emi-calculator-angular/${each.value}")
 }
 
+# resource "aws_iam_role" "codebuild_role" {
+#   assume_role_policy = ""
+# }
 
+
+resource "aws_codebuild_project" "emi_cd_builder" {
+  name          = "emi-cd-builder"
+  service_role  = var.cloudbuild_service_role
+  build_timeout = 5
+  source {
+    type      = "S3"
+    buildspec = <<EOH
+version: 0.2
+
+phases:
+  build:
+    commands:
+       - npm install
+       - npm run build
+artifacts:
+  files:
+    - 'dist/pariyojan88/*'
+  discard-paths: yes
+EOH
+  }
+  artifacts {
+    type                = "S3"
+    encryption_disabled = true
+    path                = "/"
+  }
+  environment {
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image        = "docker.io/node:16.10.0-buster"
+    type         = "LINUX_CONTAINER"
+    registry_credential {
+      credential          = var.docker_cred_secret_manager_arn
+      credential_provider = "SECRETS_MANAGER"
+    }
+  }
+}
 
 # resource "aws_s3_bucket_policy" "bucket_policy" {
 #   bucket = aws_s3_bucket.emi_bucket.id
