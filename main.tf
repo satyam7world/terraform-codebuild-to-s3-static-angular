@@ -41,16 +41,86 @@ resource "aws_s3_bucket_website_configuration" "bucket_static_website" {
   }
 }
 
-# resource "aws_iam_role" "codebuild_role" {
-#   assume_role_policy = ""
-# }
+resource "aws_iam_role" "codebuild_service_role" {
+  name               = "codebuild-service-role"
+  assume_role_policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "sts:AssumeRole"
+          ],
+          "Principal" : {
+            "Service" : [
+              "codebuild.amazonaws.com"
+            ]
+          }
+        }
+      ]
+    }
+  )
+}
+
+resource "aws_iam_role_policy" "role_policy" {
+  role   = aws_iam_role.codebuild_service_role.id
+  policy = jsonencode({
+
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "CodeBuildDefaultPolicy",
+        "Effect" : "Allow",
+        "Action" : [
+          "codebuild:*",
+          "iam:PassRole"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "CloudWatchLogsAccessPolicy",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:FilterLogEvents",
+          "logs:GetLogEvents",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "S3AccessPolicy",
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:CreateBucket",
+          "s3:GetObject",
+          "s3:List*",
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketAcl",
+          "s3:GetBucketLocation"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "secretsmanager:GetSecretValue"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
 
 
 resource "aws_codebuild_project" "emi_cd_builder" {
   name          = "emi-cd-builder"
-  service_role  = var.codebuild_service_role
+  service_role  = aws_iam_role.codebuild_service_role.arn
   build_timeout = 5
-
 
   source {
     type      = "GITHUB"
