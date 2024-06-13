@@ -6,9 +6,9 @@ The Codebuild usage docker Node.js image to build angular project, while running
 sometimes docker hub rate limits codebuild, that is why I am using Aws Secrets Manager to Store
 a Docker PAT
 
-Resources Created
+### Resources Created
 1. AWS Codebuild Project
 2. S3 Bucket (Public Static Web Hosting Enabled)
 
-Links -
+### Links -
 * [Angular Emi Calculator Project - Github](https://github.com/satyam7world/emi-calculator-angular.git)
