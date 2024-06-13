@@ -1,5 +1,4 @@
 variable "docker_cred_secret_manager_arn" {}
-variable "codebuild_service_role" {}
 
 # Step 1 - Create S3 Bucket for Static Website Hosting
 resource "aws_s3_bucket" "emi_bucket" {
@@ -8,14 +7,14 @@ resource "aws_s3_bucket" "emi_bucket" {
     Name : "Emi Calculator Bucket"
   }
 }
-
+# Step 1.x - S3 Bucket Ownership Controls
 resource "aws_s3_bucket_ownership_controls" "bucket_ownership" {
   bucket = aws_s3_bucket.emi_bucket.id
   rule {
     object_ownership = "BucketOwnerPreferred"
   }
 }
-
+# Step 1.x - S3 Bucket Enable Public Access
 resource "aws_s3_bucket_public_access_block" "bucket_public_access" {
   bucket                  = aws_s3_bucket.emi_bucket.id
   block_public_acls       = false
@@ -24,12 +23,14 @@ resource "aws_s3_bucket_public_access_block" "bucket_public_access" {
   restrict_public_buckets = false
 }
 
+# Step 1.x - S3 Bucket ACL for Fine Tune Grant - Grantee Permissions
 resource "aws_s3_bucket_acl" "bucket_acl" {
   depends_on = [aws_s3_bucket.emi_bucket, aws_s3_bucket_public_access_block.bucket_public_access]
   bucket     = aws_s3_bucket.emi_bucket.id
   acl        = "public-read"
 }
 
+# Step 1.x - S3 Enable Static Hosting
 resource "aws_s3_bucket_website_configuration" "bucket_static_website" {
   depends_on = [aws_s3_bucket.emi_bucket]
   bucket     = aws_s3_bucket.emi_bucket.id
@@ -41,6 +42,7 @@ resource "aws_s3_bucket_website_configuration" "bucket_static_website" {
   }
 }
 
+# Step 1.x - S3 Bucket Make Every Object Public Accessible by Default
 resource "aws_s3_bucket_policy" "bucket_public_policy" {
   bucket = aws_s3_bucket.emi_bucket.id
   policy = jsonencode({
@@ -61,6 +63,9 @@ resource "aws_s3_bucket_policy" "bucket_public_policy" {
   })
 }
 
+# Step 2 - Creation of Service Role - This is Trust Policy it defines list of AWS services
+# which will be able to use this service role, later we'll add iam_policy in this, it will grant
+# access to required services.
 resource "aws_iam_role" "codebuild_service_role" {
   name               = "codebuild-service-role"
   assume_role_policy = jsonencode(
@@ -83,10 +88,10 @@ resource "aws_iam_role" "codebuild_service_role" {
   )
 }
 
+# Step 2.x - Adding iam_policy in service role
 resource "aws_iam_role_policy" "role_policy" {
   role   = aws_iam_role.codebuild_service_role.id
   policy = jsonencode({
-
     "Version" : "2012-10-17",
     "Statement" : [
       {
@@ -136,7 +141,8 @@ resource "aws_iam_role_policy" "role_policy" {
   })
 }
 
-
+# Step 3 - Aws Codebuild - For CI , it will build our angular application using
+# `ng build` and will upload to our s3 static website`s bucket
 resource "aws_codebuild_project" "emi_cd_builder" {
   name          = "emi-cd-builder"
   service_role  = aws_iam_role.codebuild_service_role.arn
