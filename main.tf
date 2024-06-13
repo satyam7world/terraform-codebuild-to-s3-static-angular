@@ -2,7 +2,8 @@ variable "docker_cred_secret_manager_arn" {}
 
 # Step 1 - Create S3 Bucket for Static Website Hosting
 resource "aws_s3_bucket" "emi_bucket" {
-  bucket = "emi-calculator-tf"
+  bucket        = "emi-calculator-tf"
+  force_destroy = true
   tags = {
     Name : "Emi Calculator Bucket"
   }
