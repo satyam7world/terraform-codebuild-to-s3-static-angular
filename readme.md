@@ -1,7 +1,8 @@
 # Terraform Aws Codebuild to S3 Static - Angular
 
-![terraform_to_s3_image.png](terraform_to_s3_image.png)
-
+<p align="center">
+    <img src="terraform_to_s3_image.png"/>
+</p>
 This Terraform Project creates an AWS Codebuild for building and uploading output to S3 Bucket,
 The Bucket is configured to Static Host the OutPut angular Website.
 The Codebuild usage docker Node.js image to build angular project, while running it i found that
