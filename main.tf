@@ -41,6 +41,26 @@ resource "aws_s3_bucket_website_configuration" "bucket_static_website" {
   }
 }
 
+resource "aws_s3_bucket_policy" "bucket_public_policy" {
+  bucket = aws_s3_bucket.emi_bucket.id
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "BucketPublicAccessToGetObject",
+        "Principal" : "*",
+        "Effect" : "Allow",
+        "Action" : [
+          "s3:GetObject"
+        ],
+        "Resource" : [
+          "${aws_s3_bucket.emi_bucket.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "codebuild_service_role" {
   name               = "codebuild-service-role"
   assume_role_policy = jsonencode(
@@ -144,6 +164,7 @@ EOH
     encryption_disabled = true
     path                = "/"
     location            = aws_s3_bucket.emi_bucket.bucket
+    name                = "/"
   }
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
