@@ -185,6 +185,60 @@ EOH
   }
 }
 
+# Step 4 - Codebuild is created but it's not building anything, so i am invoking it
+# with the aws_scheduler_schedule
+
+resource "aws_iam_role" "emi-codebuild-scheduler-invoker-role" {
+  assume_role_policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Principal" : {
+            "Service" : "scheduler.amazonaws.com"
+          },
+          "Action" : "sts:AssumeRole"
+          #           "Condition" : {
+          #             "StringEquals" : {
+          #               "aws:SourceAccount" : "************"
+          #             }
+          #           }
+        }
+      ]
+    }
+  )
+}
+
+resource "aws_iam_role_policy" "emi-codebuild-scheduler-invoker-policy" {
+  role   = aws_iam_role.codebuild_service_role.id
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Sid" : "AllowCodeBuildInvokePermissions",
+          "Effect" : "Allow",
+          "Action" : "codebuild:Start*",
+          "Resource" : "*"
+        }
+      ]
+    }
+  )
+}
+
+resource "aws_scheduler_schedule" "auto-codebuild-invoker" {
+  schedule_expression = "at(2024-06-14T20:00:00)"
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_codebuild_project.emi_cd_builder.arn
+    role_arn = aws_iam_role.emi-codebuild-scheduler-invoker-role.arn
+  }
+  schedule_expression_timezone = "Asia/Calcutta"
+}
+
 
 # resource "aws_s3_bucket_policy" "bucket_policy" {
 #   bucket = aws_s3_bucket.emi_bucket.id
