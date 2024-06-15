@@ -228,7 +228,7 @@ resource "aws_iam_role_policy" "emi-codebuild-scheduler-invoker-policy" {
 }
 
 resource "time_offset" "scheduled-build-invoke-time" {
-  offset_minutes = 1
+  offset_minutes = 3
 }
 
 # variable "string-scheduled" {
@@ -244,7 +244,7 @@ resource "aws_scheduler_schedule" "auto-codebuild-invoker" {
   schedule_expression = "at(${substr(time_offset.scheduled-build-invoke-time.base_rfc3339, 0, length(time_offset.scheduled-build-invoke-time.base_rfc3339) - 1)})"
   flexible_time_window {
     mode                      = "FLEXIBLE"
-    maximum_window_in_minutes = 4
+    maximum_window_in_minutes = 5
   }
   target {
     arn      = aws_codebuild_project.emi_cd_builder.arn
