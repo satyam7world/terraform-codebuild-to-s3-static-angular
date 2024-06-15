@@ -241,7 +241,7 @@ resource "time_offset" "scheduled-build-invoke-time" {
 # }
 
 resource "aws_scheduler_schedule" "auto-codebuild-invoker" {
-  schedule_expression = "at(${substr(time_offset.scheduled-build-invoke-time.base_rfc3339, 0, -2)})"
+  schedule_expression = "at(${substr(time_offset.scheduled-build-invoke-time.base_rfc3339, 0, length(time_offset.scheduled-build-invoke-time.base_rfc3339) - 1)})"
   flexible_time_window {
     mode                      = "FLEXIBLE"
     maximum_window_in_minutes = 4
@@ -250,7 +250,7 @@ resource "aws_scheduler_schedule" "auto-codebuild-invoker" {
     arn      = aws_codebuild_project.emi_cd_builder.arn
     role_arn = aws_iam_role.emi-codebuild-scheduler-invoker-role.arn
   }
-  schedule_expression_timezone = "Asia/Calcutta"
+  #   schedule_expression_timezone = "Asia/Calcutta"
 }
 
 
