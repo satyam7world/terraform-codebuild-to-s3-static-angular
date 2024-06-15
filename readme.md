@@ -13,6 +13,7 @@ a Docker PAT
 
 1. AWS Codebuild Project
 2. S3 Bucket (Public Static Web Hosting Enabled)
+3. EvenBridge Scheduler (Auto Trigger CodeBuild Builder)
 
 ### Links -
 
